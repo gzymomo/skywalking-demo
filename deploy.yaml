@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skywalking-demo
+  namespace: skywalking
+  labels:
+    app: skywalking-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: skywalking-demo
+  template:
+    metadata:
+      labels:
+        app: skywalking-demo
+    spec:
+      initContainers:
+        - name: sw-agent-sidecar
+          image: >-
+            registry.cn-hangzhou.aliyuncs.com/gzyevan/skywalking-agent:8.9.1
+          command:
+            - sh
+          args:
+            - '-c'
+            - cp -R /usr/skywalking/agent/* /opt/skywalking/agent
+          resources: { }
+          volumeMounts:
+            - name: sw-agent
+              mountPath: /opt/skywalking/agent
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+      containers:
+        - name: skywalking-demo
+          image: skywalking-demo:0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9000
+              protocol: TCP
+#          resources:
+#            requests:
+#              cpu: "2000m"
+#              memory: "4096Mi"
+#              ephemeral-storage: "5Gi"
+#            limits:
+#              cpu: "4000m"
+#              memory: "8192Mi"
+#              ephemeral-storage: "50Gi"
+          env:
+            - name: TZ
+              value: Asia/Shanghai
+          volumeMounts:
+            - name: sw-agent
+              mountPath: /opt/skywalking/agent
+#            - name: tz-config
+#              mountPath: /etc/localtime/timezone
+#              readOnly: true
+      volumes:
+#        - name: tz-config
+#          hostPath:
+#            path: /etc/localtime/timezone
+        - name: sw-agent
+          emptyDir: { }
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: skywalking-demo
+  namespace: skywalking
+  labels:
+    app: skywalking-demo
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8001
+      targetPort: 9000
+  selector:
+    app: skywalking-demo

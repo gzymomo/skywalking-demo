@@ -1,0 +1,16 @@
+oap:
+  image:
+    tag: 8.9.1
+  storageType: elasticsearch
+
+ui:
+  image:
+    tag: 8.9.1
+
+elasticsearch:
+  imageTag: 7.17.0
+  enabled: false
+  config:               # For users of an existing elasticsearch cluster,takes effect when `elasticsearch.enabled` is false
+    host: elasticsearch-svc.skywalking
+    port:
+      http: 9200
